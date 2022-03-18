@@ -9,6 +9,10 @@
  *******************************************/
 #if defined (_MSC_VER)
 
+#ifndef IS_MSVC
+    #define IS_MSVC 1
+#endif IS_MSVC
+
 #define NOMINMAX // get rid of min and max macros on MSVC
 
 #ifndef RESTRICT
@@ -17,7 +21,7 @@
 
 #ifndef FORCE_INLINE
     #define FORCE_INLINE __forceinline
-#define FORCE_INLINE
+#endif // FORCE_INLINE
 
 /********************************************
  **** Windows MSVC - Debug
@@ -63,7 +67,11 @@
 /********************************************
 ** Apple Xcode
 ********************************************/
-#if defined(__APPLE_CPP__)
+#if defined(__APPLE__)
+
+#ifndef IS_XCODE
+    #define IS_XCODE 1
+#endif
 
 #ifndef RESTRICT
     #define RESTRICT __restrict__
@@ -78,12 +86,16 @@
 ********************************************/
 #if defined(DEBUG) || defined(_DEBUG)
 
-#ifndef(breakpoint)
+#ifndef breakpoint
     #define breakpoint __builtin_trap();
 #endif
 
+
 #ifndef debug_print
-    #define debug_print(msg, ...)                                                               \
+
+    #include <chrono>
+
+    #define debug_print(...)                                                                    \
     do {                                                                                        \
         char buf[256];                                                                          \
         const auto epoch = std::chrono::system_clock::now().time_since_epoch();                 \
@@ -91,16 +103,16 @@
         const long unsigned int timeu = timeunits.count();                                      \
         sprintf(buf, "%lu: ", timeu);                                                           \
         printf("%s", buf);                                                                      \
-        sprintf(buf, msg, __VA_ARGS__);                                                         \
+        sprintf(buf, __VA_ARGS__);                                                              \
         printf("%s\n", buf);                                                                    \
     } while(0);
 #endif
 
 #ifndef errorif
-    #define errorif(condition, msg, ...)                                                        \
+    #define errorif(condition, ...)                                                             \
     do {                                                                                        \
         if ((condition)) {                                                                      \
-            debug_print(msg "\n", __VA_ARGS__); breakpoint;                                     \
+            debug_print(__VA_ARGS__); breakpoint;                                               \
         }                                                                                       \
     } while (0);
 #endif
