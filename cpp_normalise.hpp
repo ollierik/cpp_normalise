@@ -5,191 +5,173 @@
 
 
 /********************************************
+** Platform selection
+********************************************/
+
+#if defined(DEBUG) || defined(_DEBUG)
+#   define CPP_DEBUG 1
+#endif
+
+#if defined(__APPLE__)
+#   ifndef CPP_MACOS
+#       define CPP_MACOS 1
+#   endif
+#elif defined(_MSC_VER)
+#   ifndef CPP_WIN32
+#       define CPP_WIN32 1
+#   endif
+#endif
+
+/********************************************
 ** Common
 ********************************************/
 
 #ifndef IGNORE_UNUSED
-    #define IGNORE_UNUSED(expr)  do { (void)(expr); } while (0)
+#   define IGNORE_UNUSED(expr)  do { (void)(((expr))); } while (0);
 #endif
-
-#ifndef SNPRINTF
-    #define SNPRINTF(buffer, size, format, ...) snprintf(buffer, size, format, __VA_ARGS__)
-#endif
-
 
 /********************************************
-** Apple Xcode
+** macOS
 ********************************************/
-#if defined(__APPLE_CPP__)
+#if CPP_MACOS
 
 #ifndef NEVER_INLINE
-    #define NEVER_INLINE __attribute__((noinline))
+#   define NEVER_INLINE __attribute__((noinline))
 #endif // NEVER_INLINE
 
 #ifndef RESTRICT
-    #define RESTRICT __restrict__
+#   define RESTRICT __restrict__
 #endif // RESTRICT
 
 #ifndef FORCE_INLINE
-    #define FORCE_INLINE __attribute__((always_inline))
+#   define FORCE_INLINE __attribute__((always_inline))
 #endif // FORCE_INLINE
 
+#endif // CPP_MACOS
+
 /********************************************
- ***** Apple Xcode - Debug
+** macOS Debug
 ********************************************/
-#if defined(DEBUG) || defined(_DEBUG)
+#if CPP_MACOS && CPP_DEBUG
+
+#include <cstdio> // printf
 
 #ifndef breakpoint
-    #define breakpoint __builtin_trap();
+#   define breakpoint __builtin_trap();
 #endif // breakpoint
 
 #ifndef debug_print
-    #define debug_print(msg, ...)                                                               \
+#   define debug_print(msg, ...)                                                                \
     do {                                                                                        \
         printf(msg, ...);                                                                       \
     } while(0);
 #endif // debug_print
 
-#ifndef debug_println
-    #define debug_println(msg, ...)                                                             \
-    do {                                                                                        \
-        char buf[256];                                                                          \
-        const auto epoch = std::chrono::system_clock::now().time_since_epoch();                 \
-        const auto timeunits = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);    \
-        const long unsigned int timeu = timeunits.count();                                      \
-        SNPRINTF(buf, 256, "%lu: ", timeu);                                                     \
-        printf("%s", buf);                                                                      \
-        sprintf(buf, msg, ##__VA_ARGS__);                                                       \
-        printf("%s\n", buf);                                                                    \
-    } while(0);
-#endif // debug_println
+#endif // CPP_MACOS && CPP_DEBUG
 
-#ifndef errorif
-    #define errorif(condition, msg, ...)                                                        \
-    do {                                                                                        \
-        if ((condition)) {                                                                      \
-            debug_print(msg "\n", ##__VA_ARGS__); breakpoint;                                   \
-        }                                                                                       \
-    } while (0);
-#endif // errorif
-
-#endif // if DEBUG
-
-#endif // if Apple
 
 
 /********************************************
- ** Windows MSVC
- *******************************************/
-#if defined (_MSC_VER)
-
-#ifndef IS_MSVC
-	#define IS_MSVC 1
-#endif
+** Win32
+********************************************/
+#if CPP_WIN32
 
 #define NOMINMAX // get rid of min and max macros on MSVC
 
 #ifndef RESTRICT
-    #define RESTRICT __restrict
-#endif
+#   define RESTRICT __restrict
+#endif // RESTRICT
 
 #ifndef FORCE_INLINE
-    #define FORCE_INLINE __forceinline
+#   define FORCE_INLINE __forceinline
 #endif // FORCE_INLINE
 
 #ifndef NEVER_INLINE
-    #define NEVER_INLINE __declspec(noinline)
+#   define NEVER_INLINE __declspec(noinline)
 #endif // NEVER_INLINE
 
-/********************************************
- **** Windows MSVC - Debug
- *******************************************/
-#if defined(DEBUG) || defined(_DEBUG)
+#endif // CPP_WIN32
 
+/********************************************
+** Win32 Debug
+********************************************/
+#if CPP_WIN32 && CPP_DEBUG
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>    // OutputDebugStringA
 #include <intrin.h>     // __debugbreak() 
 #include <chrono>       // debug_print time functions
 
 #ifndef breakpoint
-    #define breakpoint __debugbreak()
+#   define breakpoint __debugbreak()
 #endif // breakpoint
 
 #ifndef debug_print
-    #define debug_print(msg, ...)                                                               \
+#   define debug_print(msg, ...)                                                                \
     do {                                                                                        \
         char buf[256];                                                                          \
-        SNPRINTF(buf, 256, msg, __VA_ARGS__);                                                   \
+        snprintf_s(buf, 256, msg, __VA_ARGS__);                                                 \
         OutputDebugStringA(buf);                                                                \
     } while(0);
 #endif // debug_print
 
-#ifndef debug_println
-    #define debug_println(msg, ...)                                                             \
+#endif // CPP_WIN32 && CPP_DEBUG
+
+/********************************************
+** Debug helpers
+********************************************/
+
+#if CPP_DEBUG
+
+#ifndef debug_line
+#   define debug_println(msg, ...)                                                              \
     do {                                                                                        \
-        char buf[256];                                                                          \
         const auto epoch = std::chrono::system_clock::now().time_since_epoch();                 \
         const auto timeunits = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);    \
         const long unsigned int timeu = timeunits.count();                                      \
-        SNPRINTF(buf, 256, "%lu: ", timeu);                                                     \
-        OutputDebugStringA(buf);                                                                \
-        SNPRINTF(buf, 256, msg, __VA_ARGS__);                                                   \
-        OutputDebugStringA(buf);                                                                \
-        OutputDebugStringA("\n");                                                               \
+        debug_print("%lu: ", timeu);                                                            \
+        debug_print(msg "\n", __VA_ARGS__);                                                     \
     } while(0);
 #endif // debug_print
 
 #ifndef errorif
-    #define errorif(condition, msg, ...)                                                        \
+#   define errorif(condition, msg, ...)                                                         \
     do {                                                                                        \
-        if ((condition)) {                                                                      \
-            debug_print(msg "\n", __VA_ARGS__); breakpoint;                                     \
+        if (((condition))) {                                                                    \
+            debug_print(msg "\n", ##__VA_ARGS__); breakpoint;                                   \
         }                                                                                       \
     } while (0);
 #endif // errorif
 
-#endif // if DEBUG
-
-#endif // if Windows
-
+#endif // CPP_DEBUG
 
 /********************************************
- ** TODO: GNU Linux
- *******************************************/
-#if defined(__GNUC__)
-    // TODO
-#endif // GNU
-
-/********************************************
- ** Release and as fallback
+ ** Release and fallback
  *******************************************/
 
 #ifndef RESTRICT
-    #define RESTRICT
+#   define RESTRICT
 #endif // RESTRICT
 
 #ifndef FORCE_INLINE
-    #define FORCE_INLINE
+#   define FORCE_INLINE
 #endif // FORCE_INLINE
 
 #ifndef breakpoint
-    #define breakpoint ((void)0);
+#   define breakpoint ((void)0);
 #endif // breakpoint
 
-#ifndef debug_println
-    #define debug_println(msg, ...) ((void)0)
+#ifndef debug_print
+#   define debug_print(msg, ...) ((void)0)
 #endif // debug_print
 
-#ifndef debug_print
-    #define debug_print(msg, ...) ((void)0)
+#ifndef debug_line
+#   define debug_println(msg, ...) ((void)0)
 #endif // debug_print
 
 #ifndef errorif
-    #define errorif(condition, msg, ...) ((void)0)
+#   define errorif(condition, msg, ...) ((void)0)
 #endif // errorif
 
 
-
 #endif // CPP_NORMALISE_MACRO_GUARD
-
-
-
