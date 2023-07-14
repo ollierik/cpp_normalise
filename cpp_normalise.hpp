@@ -5,13 +5,14 @@
 
 
 /********************************************
-** Platform selection
-********************************************/
+ * Platform
+ ********************************************/
 
 #if defined(DEBUG) || defined(_DEBUG)
 #   define CPP_DEBUG 1
 #endif
 
+// platform definition
 #if defined(__APPLE__)
 #   ifndef CPP_MACOS
 #       define CPP_MACOS 1
@@ -22,16 +23,59 @@
 #   endif
 #endif
 
+// architecture definition
+#if (defined(__x86_64__) || defined(_M_X64) || defined(i386) || defined(_M_IX86))
+#   ifndef CPP_INTEL
+#       define CPP_INTEL 1
+#   endif
+#elif defined(__aarch64__)
+#   ifndef CPP_ARM
+#       define CPP_ARM 1
+#   endif
+#endif
+
+// language version definitions
+#if (__cplusplus >= 201703L)
+#   ifndef CPP_STD17
+#       define CPP_STD17 1
+#   endif
+#endif
+#if (__cplusplus >= 201402L)
+#   ifndef CPP_STD14
+#       define CPP_STD14 1
+#   endif
+#endif
+#if (__cplusplus >= 201103L)
+#   ifndef CPP_STD11
+#       define CPP_STD11 1
+#   endif
+#endif
+#if (__cplusplus >= 199711L)
+#   ifndef CPP_STD98
+#       define CPP_STD98 1
+#   endif
+#endif
+
 /********************************************
- ** Common
+ * Common
  ********************************************/
 
 #ifndef IGNORE_UNUSED
 #   define IGNORE_UNUSED(expr)  do { (void)(((expr))); } while (0);
-#endif
+#endif // MAYBE_UNUSED
+
+#ifndef MAYBE_UNUSED
+#   if CPP_STD17
+#       define MAYBE_UNUSED [[maybe_unused]]
+#   else
+#       if CPP_MACOS
+#           define MAYBE_UNUSED __attribute__((unused))
+#       endif // no Win32 counterpart
+#   endif
+#endif // MAYBE_UNUSED
 
 /********************************************
- ** macOS
+ * macOS
  ********************************************/
 #if CPP_MACOS
 
@@ -72,7 +116,6 @@
 #endif // debug_print
 
 #endif // CPP_MACOS && CPP_DEBUG
-
 
 
 /********************************************
