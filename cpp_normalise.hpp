@@ -70,7 +70,9 @@
 #   else
 #       if CPP_MACOS
 #           define MAYBE_UNUSED __attribute__((unused))
-#       endif // no Win32 counterpart
+#       else
+#           define MAYBE_UNUSED // no WIN32 counterpart
+#       endif
 #   endif
 #endif // MAYBE_UNUSED
 
@@ -124,6 +126,7 @@
 #if CPP_WIN32
 
 #define NOMINMAX // get rid of min and max macros on MSVC
+#define WIN32_LEAN_AND_MEAN // don't include stuff that isn't typically needed
 
 #ifndef RESTRICT
 #   define RESTRICT __restrict
@@ -148,7 +151,6 @@
 ********************************************/
 #if CPP_WIN32 && CPP_DEBUG
 
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>    // OutputDebugStringA
 #include <intrin.h>     // __debugbreak() 
 #include <chrono>       // debug_print time functions
@@ -204,6 +206,10 @@
 #ifndef RESTRICT
 #   define RESTRICT
 #endif // RESTRICT
+
+#ifndef NEVER_INLINE
+#   define NEVER_INLINE
+#endif // NEVER_INLINE
 
 #ifndef FORCE_INLINE
 #   define FORCE_INLINE
