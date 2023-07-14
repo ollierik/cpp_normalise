@@ -23,35 +23,39 @@
 #endif
 
 /********************************************
-** Common
-********************************************/
+ ** Common
+ ********************************************/
 
 #ifndef IGNORE_UNUSED
 #   define IGNORE_UNUSED(expr)  do { (void)(((expr))); } while (0);
 #endif
 
 /********************************************
-** macOS
-********************************************/
+ ** macOS
+ ********************************************/
 #if CPP_MACOS
-
-#ifndef NEVER_INLINE
-#   define NEVER_INLINE __attribute__((noinline))
-#endif // NEVER_INLINE
 
 #ifndef RESTRICT
 #   define RESTRICT __restrict__
 #endif // RESTRICT
 
+#ifndef NEVER_INLINE
+#   define NEVER_INLINE __attribute__((noinline))
+#endif // NEVER_INLINE
+
 #ifndef FORCE_INLINE
 #   define FORCE_INLINE __attribute__((always_inline))
 #endif // FORCE_INLINE
 
+#ifndef CPP_PRETTY_FUNCTION
+#   define CPP_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#endif // CPP_PRETTY_FUNCTION
+
 #endif // CPP_MACOS
 
 /********************************************
-** macOS Debug
-********************************************/
+ ** macOS Debug
+ ********************************************/
 #if CPP_MACOS && CPP_DEBUG
 
 #include <cstdio> // printf
@@ -63,7 +67,7 @@
 #ifndef debug_print
 #   define debug_print(msg, ...)                                                                \
     do {                                                                                        \
-        printf(msg, ...);                                                                       \
+        printf(msg, ##__VA_ARGS__);                                                             \
     } while(0);
 #endif // debug_print
 
@@ -82,13 +86,17 @@
 #   define RESTRICT __restrict
 #endif // RESTRICT
 
+#ifndef NEVER_INLINE
+#   define NEVER_INLINE __declspec(noinline)
+#endif // NEVER_INLINE
+
 #ifndef FORCE_INLINE
 #   define FORCE_INLINE __forceinline
 #endif // FORCE_INLINE
 
-#ifndef NEVER_INLINE
-#   define NEVER_INLINE __declspec(noinline)
-#endif // NEVER_INLINE
+#ifndef CPP_PRETTY_FUNCTION
+#   define CPP_PRETTY_FUNCTION __FUNCSIG__
+#endif // CPP_PRETTY_FUNCTION
 
 #endif // CPP_WIN32
 
@@ -124,7 +132,7 @@
 #if CPP_DEBUG
 
 #ifndef debug_line
-#   define debug_println(msg, ...)                                                              \
+#   define debug_line(msg, ...)                                                                 \
     do {                                                                                        \
         const auto epoch = std::chrono::system_clock::now().time_since_epoch();                 \
         const auto timeunits = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);    \
@@ -132,13 +140,14 @@
         debug_print("%lu: ", timeu);                                                            \
         debug_print(msg "\n", __VA_ARGS__);                                                     \
     } while(0);
-#endif // debug_print
+#endif // debug_line
 
 #ifndef errorif
 #   define errorif(condition, msg, ...)                                                         \
     do {                                                                                        \
         if (((condition))) {                                                                    \
-            debug_print(msg "\n", ##__VA_ARGS__); breakpoint;                                   \
+            debug_print(msg "\n", ##__VA_ARGS__);                                               \
+            breakpoint;                                                                         \
         }                                                                                       \
     } while (0);
 #endif // errorif
@@ -166,7 +175,7 @@
 #endif // debug_print
 
 #ifndef debug_line
-#   define debug_println(msg, ...) ((void)0)
+#   define debug_line(msg, ...) ((void)0)
 #endif // debug_print
 
 #ifndef errorif
